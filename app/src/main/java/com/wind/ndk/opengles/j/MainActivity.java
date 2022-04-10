@@ -6,6 +6,9 @@ import android.content.pm.ConfigurationInfo;
 import android.content.pm.PackageManager;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
+import android.view.ViewGroup;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.RadioGroup;
 import android.widget.Toast;
 
@@ -17,89 +20,87 @@ import com.wind.ndk.opengles.R;
 public class MainActivity extends AppCompatActivity {
 
 
-    MyGLSurfaceView glSurfaceView;
+    private MyGLSurfaceView mGLSurfaceView;
     boolean rendererSet;
-    CameraRenderer mCameraRenderer;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        glSurfaceView=findViewById(R.id.gl_sruface_view);
-        //检查是否支持opengles 2.0
-        ActivityManager activityManager= (ActivityManager) getSystemService(ACTIVITY_SERVICE);
-        ConfigurationInfo configurationInfo=activityManager.getDeviceConfigurationInfo();
-        boolean supports=configurationInfo.reqGlEsVersion>=0x20000;
+        mGLSurfaceView = findViewById(R.id.gl_sruface_view);
 
-        boolean granted=ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
-                == PackageManager.PERMISSION_GRANTED;
-       if (!granted){
-           ActivityCompat.requestPermissions(this,new String[]{ Manifest.permission.CAMERA},1111);
-       }
-        if (supports && granted){
-            //1 设置egl版本为2
-            glSurfaceView.setEGLContextClientVersion(2);
-            //2 设置渲染器renderer
-           // glSurfaceView.setRenderer(new MyGLRenderer(glSurfaceView));
-            glSurfaceView.setRenderer(mCameraRenderer=new CameraRenderer(glSurfaceView));
-            /*
-             *  3 设置渲染模式
-             * @see #RENDERMODE_CONTINUOUSLY  不断的渲染
-             * @see #RENDERMODE_WHEN_DIRTY   需要时渲染
-             */
-            glSurfaceView.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
-            rendererSet=true;
+        ViewGroup.LayoutParams layoutParams=mGLSurfaceView.getLayoutParams();
+        int screenWidth=getWindowManager().getDefaultDisplay().getWidth();
+        layoutParams.width=screenWidth;
+        //预览分辨率 size.width:640 size.height:480
+        layoutParams.height= (int) (screenWidth*(640/480f));
+        ((MyRecordButton) findViewById(R.id.btn_record)).setOnRecordListener(
+                new MyRecordButton.OnRecordListener() {
+                    /**
+                     * 开始录制
+                     */
+                    @Override
+                    public void onStartRecording() {
+                        mGLSurfaceView.startRecording();
+                    }
 
+                    /**
+                     * 停止录制
+                     */
+                    @Override
+                    public void onStopRecording() {
+                        mGLSurfaceView.stopRecording();
+                        Toast.makeText(MainActivity.this, "录制完成！", Toast.LENGTH_SHORT).show();
+                    }
+                });
 
-            ((MyRecordButton) findViewById(R.id.btn_record)).setOnRecordListener(
-                    new MyRecordButton.OnRecordListener() {
-                        /**
-                         * 开始录制
-                         */
-                        @Override
-                        public void onStartRecording() {
-                            mCameraRenderer.startRecording();
+        ((RadioGroup) findViewById(R.id.group_record_speed)).setOnCheckedChangeListener(
+                new RadioGroup.OnCheckedChangeListener() {
+                    /**
+                     * 选择录制模式
+                     * @param group
+                     * @param checkedId
+                     */
+                    @Override
+                    public void onCheckedChanged(RadioGroup group, int checkedId) {
+                        switch (checkedId) {
+                            case R.id.rbtn_record_speed_extra_slow: //极慢
+                                mGLSurfaceView.setSpeed(MyGLSurfaceView.Speed.MODE_EXTRA_SLOW);
+                                break;
+                            case R.id.rbtn_record_speed_slow:   //慢
+                                mGLSurfaceView.setSpeed(MyGLSurfaceView.Speed.MODE_SLOW);
+                                break;
+                            case R.id.rbtn_record_speed_normal: //正常
+                                mGLSurfaceView.setSpeed(MyGLSurfaceView.Speed.MODE_NORMAL);
+                                break;
+                            case R.id.rbtn_record_speed_fast:   //快
+                                mGLSurfaceView.setSpeed(MyGLSurfaceView.Speed.MODE_FAST);
+                                break;
+                            case R.id.rbtn_record_speed_extra_fast: //极快
+                                mGLSurfaceView.setSpeed(MyGLSurfaceView.Speed.MODE_EXTRA_FAST);
+                                break;
                         }
+                    }
+                });
 
-                        /**
-                         * 停止录制
-                         */
-                        @Override
-                        public void onStopRecording() {
-                            mCameraRenderer.stopRecording();
-                            Toast.makeText(MainActivity.this, "录制完成！", Toast.LENGTH_SHORT).show();
-                        }
-                    });
-
-            ((RadioGroup) findViewById(R.id.group_record_speed)).setOnCheckedChangeListener(
-                    new RadioGroup.OnCheckedChangeListener() {
-                        /**
-                         * 选择录制模式
-                         * @param group
-                         * @param checkedId
-                         */
-                        @Override
-                        public void onCheckedChanged(RadioGroup group, int checkedId) {
-                            switch (checkedId) {
-                                case R.id.rbtn_record_speed_extra_slow: //极慢
-                                    mCameraRenderer.setSpeed(CameraRenderer.Speed.MODE_EXTRA_SLOW);
-                                    break;
-                                case R.id.rbtn_record_speed_slow:   //慢
-                                    mCameraRenderer.setSpeed(CameraRenderer.Speed.MODE_SLOW);
-                                    break;
-                                case R.id.rbtn_record_speed_normal: //正常
-                                    mCameraRenderer.setSpeed(CameraRenderer.Speed.MODE_NORMAL);
-                                    break;
-                                case R.id.rbtn_record_speed_fast:   //快
-                                    mCameraRenderer.setSpeed(CameraRenderer.Speed.MODE_FAST);
-                                    break;
-                                case R.id.rbtn_record_speed_extra_fast: //极快
-                                    mCameraRenderer.setSpeed(CameraRenderer.Speed.MODE_EXTRA_FAST);
-                                    break;
-                            }
-                        }
-                    });
-        }
+        ((CheckBox)findViewById(R.id.chk_bigeye)).setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                mGLSurfaceView.enableBigEye(isChecked);
+            }
+        });
+        ((CheckBox)findViewById(R.id.chk_stick)).setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                mGLSurfaceView.enableStick(isChecked);
+            }
+        });
+        ((CheckBox)findViewById(R.id.chk_beauty)).setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                mGLSurfaceView.enableBeauty(isChecked);
+            }
+        });
 
 
     }
@@ -113,7 +114,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         if (rendererSet){
-            glSurfaceView.onPause();
+            mGLSurfaceView.onPause();
         }
     }
     /**
@@ -124,7 +125,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         if (rendererSet){
-            glSurfaceView.onResume();
+            mGLSurfaceView.onResume();
         }
     }
 }

@@ -17,26 +17,25 @@ import java.nio.ByteBuffer;
  * Created By wind
  * on 2020-01-19
  */
-public class MyMediaRecorder {
+public class VideoRecorder extends BaseRecorder{
 
-    MediaCodec mMediaCodec;
-    Surface mInputSurface;
-    private Handler mHandler;
     private int mWidth;
     private int mHeight;
-    //复用器
-    MediaMuxer mMediaMuxer;
-    private String mOutputPath;
-    EGLRenderer mEGLRenderer;
-    private boolean mStarted;
-    private Context mContext;
     private EGLContext mShareEGLContext;
+    private Context mContext;
+    Surface mInputSurface;
+    private boolean mStarted;
 
-    private int index;
-    public MyMediaRecorder(Context context, EGLContext shareEGLContext, int width, int height, String outputPath) {
+    EGLRenderer mEGLRenderer;
+
+    private float mSpeed=1f;
+
+    private long mLastTimestampUs;
+
+    public VideoRecorder(MediaMuxer mediaMuxer,Context context, EGLContext shareEGLContext, int width, int height) {
+        super(mediaMuxer);
         this.mWidth = width;
         this.mHeight = height;
-        this.mOutputPath = outputPath;
 
         this.mContext=context;
         this.mShareEGLContext=shareEGLContext;
@@ -46,8 +45,12 @@ public class MyMediaRecorder {
     }
 
 
-    public void start(float speed) throws IOException {
+    public void setSpeed(float speed){
+        this.mSpeed=speed;
+    }
 
+    public void start() throws IOException {
+        super.start();
 
         /**
          * 1, 创建 MediaCodec编码器
@@ -78,19 +81,15 @@ public class MyMediaRecorder {
         /**
          * 4, 创建封装器（复用器）
          */
-        mMediaMuxer = new MediaMuxer(mOutputPath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
+        //mMediaMuxer = new MediaMuxer(mOutputPath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
 
 
-        /**
-         * 5, 配置 EGL 环境
-         */
-        HandlerThread handlerThread = new HandlerThread("encodeThread");
-        handlerThread.start();
-        mHandler = new Handler(handlerThread.getLooper());
-        mHandler.post(new Runnable() {
+        queueEvent(new Runnable() {
             @Override
             public void run() {
-
+                /**
+                 * 5, 配置 EGL 环境
+                 */
                 mEGLRenderer=new EGLRenderer(mContext,mShareEGLContext,mInputSurface);
                 mEGLRenderer.onReady(mWidth,mHeight);
                 mMediaCodec.start();
@@ -100,8 +99,13 @@ public class MyMediaRecorder {
     }
 
 
+
+
     public void stop(){
         mStarted=false;
+
+
+
 
         mHandler.post(new Runnable() {
             @Override
@@ -112,16 +116,7 @@ public class MyMediaRecorder {
                     mMediaCodec.release();
                     mMediaCodec=null;
                 }
-                if (mMediaMuxer!=null){
-                    try {
-                        mMediaMuxer.stop();
-                        mMediaMuxer.release();
-                    }catch (Exception e){
-                        e.printStackTrace();
-                    }
 
-                    mMediaMuxer=null;
-                }
                 if (mInputSurface!=null){
                     mInputSurface.release();
                     mInputSurface=null;
@@ -129,6 +124,11 @@ public class MyMediaRecorder {
                 mEGLRenderer.release();
                 mHandler.getLooper().quitSafely();
                 mHandler=null;
+                mRecording=false;
+                mTrackIndex=-1;
+                if (mOnRecordStateChangedListener!=null){
+                    mOnRecordStateChangedListener.onRecordStop();
+                }
             }
         });
     }
@@ -152,11 +152,14 @@ public class MyMediaRecorder {
         }
     }
 
+
+
     private void getEncodedData(boolean endOfStream){
         if (endOfStream){
             //不录，发送一个通知给mMediaCodec
             mMediaCodec.signalEndOfInputStream();
         }
+        //输出缓冲区
         MediaCodec.BufferInfo bufferInfo=new MediaCodec.BufferInfo();
         while (true){
             int status=mMediaCodec.dequeueOutputBuffer(bufferInfo,10_000);
@@ -169,9 +172,12 @@ public class MyMediaRecorder {
                 }
             }else if (status==MediaCodec.INFO_OUTPUT_FORMAT_CHANGED){//输出格式变更了
                 MediaFormat outputFormat=mMediaCodec.getOutputFormat();
-                index=mMediaMuxer.addTrack(outputFormat);
+                mTrackIndex=mMediaMuxer.addTrack(outputFormat);
+                if (mOnRecordStateChangedListener!=null){
+                    mOnRecordStateChangedListener.onAddTrack(outputFormat.getString(MediaFormat.KEY_MIME));
+                }
                 //开始封装
-                mMediaMuxer.start();
+               // mMediaMuxer.start();
             }else if (status==MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED){
 
             }else {
@@ -181,16 +187,23 @@ public class MyMediaRecorder {
                     if ((bufferInfo.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG)!=0){
                         bufferInfo.size=0;
                     }
-                    if (bufferInfo.size!=0){
+                    if (bufferInfo.size != 0) {
+                        bufferInfo.presentationTimeUs = (long) (bufferInfo.presentationTimeUs / mSpeed);
+                        //presentationTimeUs xxxx < lastTimestampUs  xxx
+                        //时间戳比上一次的要小，这判断一下
+                        if (bufferInfo.presentationTimeUs <= mLastTimestampUs) {
+                            bufferInfo.presentationTimeUs = (long) (mLastTimestampUs + 1_000_000 / 30 / mSpeed);
+                        }
+                        mLastTimestampUs = bufferInfo.presentationTimeUs;
+
+
+                        //偏移位置
                         outputBuffer.position(bufferInfo.offset);
                         //可读写的总长度
-                        outputBuffer.limit(bufferInfo.offset+bufferInfo.size);
-
+                        outputBuffer.limit(bufferInfo.offset + bufferInfo.size);
                         //写数据（输出）
-                        try {
-                            mMediaMuxer.writeSampleData(index, outputBuffer, bufferInfo);
-                        } catch (Exception e) {
-                            e.printStackTrace();
+                        if (mOnRecordStateChangedListener != null) {
+                            mOnRecordStateChangedListener.onFramePrepared(new Frame(outputBuffer,bufferInfo,mTrackIndex));
                         }
                     }
                 }
@@ -203,4 +216,6 @@ public class MyMediaRecorder {
             }
         }
     }
+
+
 }

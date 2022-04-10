@@ -1,73 +1,249 @@
 package com.wind.ndk.opengles.j;
 
-import android.opengl.GLES20;
-import android.opengl.GLSurfaceView;
+import static android.opengl.GLES20.glClear;
+import static android.opengl.GLES20.glClearColor;
+import static android.opengl.GLES20.glGenTextures;
 
+import static javax.microedition.khronos.opengles.GL10.GL_COLOR_BUFFER_BIT;
+
+import android.app.Activity;
+import android.graphics.SurfaceTexture;
+import android.hardware.Camera;
+import android.opengl.EGL14;
+import android.opengl.EGLContext;
+import android.opengl.GLSurfaceView;
+import android.os.Environment;
+import android.util.Log;
+
+
+import com.wind.ndk.opengles.CameraHelper;
+import com.wind.ndk.opengles.j.filter.CameraFilter;
 import com.wind.ndk.opengles.j.filter.ScreenFilter;
+import com.wind.ndk.opengles.j.record.MuxerRecorder;
+
+import java.io.IOException;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
 /**
- * Created By wind
- * on 2020-01-12
+ * 核心类
  */
-public class MyGLRenderer implements GLSurfaceView.Renderer {
-    MyGLSurfaceView mGlSurfaceView;
-    ScreenFilter mScreenFilter;
-    int []textures;
-    public MyGLRenderer(MyGLSurfaceView glSurfaceView) {
-        mGlSurfaceView = glSurfaceView;
+class MyGLRenderer implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameAvailableListener,
+        Camera.PreviewCallback {
+
+    private final MyGLSurfaceView mGLSurfaceView;
+    private final int mCameraID = Camera.CameraInfo.CAMERA_FACING_FRONT;
+    private CameraHelper mCameraHelper;
+    private SurfaceTexture mSurfaceTexture;
+    private ScreenFilter mScreenFilter;
+    private int[] mTextureID;
+    private CameraFilter mCameraFilter;
+    private MuxerRecorder mMediaRecorder;
+    //private FaceTrack mFaceTrack;
+    //private BigEyeFilter mBigEyeFilter;
+    private int mWidth;
+    private int mHeight;
+   // private StickFilter mStickFilter;
+   // private BeautyFilter mBeautyFilter;
+
+    public MyGLRenderer(MyGLSurfaceView myGLSurfaceView) {
+        mGLSurfaceView = myGLSurfaceView;
+      /*  FileUtil.copyAssets2SDCard(mGLSurfaceView.getContext(), "lbpcascade_frontalface.xml",
+                "/sdcard/lbpcascade_frontalface.xml");
+        FileUtil.copyAssets2SDCard(mGLSurfaceView.getContext(), "seeta_fa_v1.1.bin",
+                "/sdcard/seeta_fa_v1.1.bin");*/
     }
+
+    /**
+     * 当Surface创建时回调
+     *
+     * @param gl
+     * @param config
+     */
     @Override
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
+        mCameraHelper = new CameraHelper((Activity) mGLSurfaceView.getContext(), mCameraID, 640,
+                480);
+        mCameraHelper.setPreviewCallback(this);
 
-        mScreenFilter=new ScreenFilter(mGlSurfaceView.getContext());
-        textures=new int[1];
-        /**
-         *          int n,              创建纹理个数
-         *         int[] textures,      存放纹理id数组
-         *         int offset           数组中存放位置从哪里开始
-         */
-        GLES20.glGenTextures(1,textures,0);
-        //绑定纹理
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D,textures[0]);
-        /**
-         * 设置纹理参数
-         * GL_TEXTURE_MAG_FILTER 纹理需要放大时，使用哪个过滤算法
-         * GL_TEXTURE_MIN_FILTER 纹理需要缩小时，使用哪个过滤算法
-         * GL_LINEAR 线性过滤
-         * GL_NEAREST最邻近过滤
-         *
-         * GL_TEXTURE_WRAP_S 纹理s方向扩展方式
-         * GL_TEXTURE_WRAP_T 纹理t方向扩展方式 这里指定为GL_CLAMP_TO_EDGE
-         * GL_CLAMP_TO_EDGE 扩展边缘像素
-         * GL_REPEAT 重复显示
-         *
-         */
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D,GLES20.GL_TEXTURE_MAG_FILTER,GLES20.GL_LINEAR);
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D,GLES20.GL_TEXTURE_MIN_FILTER,GLES20.GL_LINEAR);
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D,GLES20.GL_TEXTURE_WRAP_S,GLES20.GL_CLAMP_TO_EDGE);
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D,GLES20.GL_TEXTURE_WRAP_T,GLES20.GL_CLAMP_TO_EDGE);
-        //设置完之后需要解绑纹理
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D,0);
-      }
+        //准备画布
+        mTextureID = new int[1];
+        //通过opengl创建一个纹理的id
+        glGenTextures(mTextureID.length, mTextureID, 0);
+        mSurfaceTexture = new SurfaceTexture(mTextureID[0]);
+        mSurfaceTexture.setOnFrameAvailableListener(this);
 
+        mScreenFilter = new ScreenFilter(mGLSurfaceView.getContext());
+        mCameraFilter = new CameraFilter(mGLSurfaceView.getContext());
+
+//        mBigEyeFilter = new BigEyeFilter(mGLSurfaceView.getContext());
+
+        EGLContext eglContext = EGL14.eglGetCurrentContext();   //渲染线程的 EGLContext
+
+        try {
+            mMediaRecorder = new MuxerRecorder(mGLSurfaceView.getContext(),eglContext,480, 640,  Environment.getExternalStorageDirectory()+"/test.mp4");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Surface发生改变时回调
+     *
+     * @param gl
+     * //这里的宽高跟相机的分辨率不是一样的！！！
+     * @param width
+     * @param height
+     */
     @Override
     public void onSurfaceChanged(GL10 gl, int width, int height) {
-        mScreenFilter.onReady(width,height);
+        mWidth = width;
+        mHeight = height;
+        // 创建跟踪器
+       /* mFaceTrack = new FaceTrack("/sdcard/lbpcascade_frontalface.xml",
+                "/sdcard/seeta_fa_v1.1.bin", mCameraHelper);
+        //启动跟踪器
+        mFaceTrack.startTrack();*/
 
+        mCameraHelper.startPreview(mSurfaceTexture);
+        mCameraFilter.onReady(width, height);
+//        mBigEyeFilter.onReady(width, height);
+        mScreenFilter.onReady(width, height);
+        //      glViewport(0, 0, width, height);
     }
 
     @Override
     public void onDrawFrame(GL10 gl) {
-        //设置清屏色
-        GLES20.glClearColor(1,0,0,1);
-        //清除颜色缓冲区
-        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+        //设置清理屏幕的颜色
+        glClearColor(255, 0, 0, 0);
+        //GL_COLOR_BUFFER_BIT 颜色缓冲区
+        //GL_DEPTH_BUFFER_BIT   深度缓冲区
+        //GL_STENCIL_BUFFER_BIT 模型缓冲区
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        //输出摄像头的数据
+        //更新纹理
+        mSurfaceTexture.updateTexImage();
+        float[] mtx = new float[16];
+        mSurfaceTexture.getTransformMatrix(mtx);
+        mCameraFilter.setMatrix(mtx);
+        //mTextureID[0]: 摄像头的, 先渲染到FBO
+        int textureId = mCameraFilter.onDrawFrame(mTextureID[0]);
+        //滤镜特效
+        //textureId = xxxFilter.onDrawFrame(textureId);
+        //textureId = xxxFilter.onDrawFrame(textureId);
+        //......
 
 
-        mScreenFilter.onDrawFrame(textures[0]);
+        /*if (null != mBigEyeFilter){
+            mBigEyeFilter.setFace(mFaceTrack.getFace());
+            textureId = mBigEyeFilter.onDrawFrame(textureId);
+        }
+        if (null != mStickFilter){
+            mStickFilter.setFace(mFaceTrack.getFace());
+            textureId = mStickFilter.onDrawFrame(textureId);
+        }
+        if (null != mBeautyFilter){
+            textureId = mBeautyFilter.onDrawFrame(textureId);
+        }*/
+        mScreenFilter.onDrawFrame(textureId);
+        //textureId 是要渲染的纹理id 也是要编码的纹理id
 
+        //录制视频（将图像进行编码）
+        mMediaRecorder.encodeFrame(textureId, mSurfaceTexture.getTimestamp());
+    }
+
+    /**
+     * 有可用数据时回调
+     *
+     * @param surfaceTexture
+     */
+    @Override
+    public void onFrameAvailable(SurfaceTexture surfaceTexture) {
+        mGLSurfaceView.requestRender();
+    }
+
+    public void onSurfaceDestroyed() {
+        mCameraHelper.stopPreview();
+        //mFaceTrack.stopTrack();
+    }
+
+    /**
+     * 开始录制
+     *
+     * @param speed
+     */
+    public void startRecording(float speed) {
+        Log.e("MyGLRender", "startRecording");
+        try {
+            mMediaRecorder.start(speed);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * 停止录制
+     */
+    public void stopRecording() {
+        Log.e("MyGLRender", "stopRecording");
+        mMediaRecorder.stop();
+    }
+
+
+    @Override
+    public void onPreviewFrame(byte[] data, Camera camera) {
+       // mFaceTrack.detector(data);
+    }
+
+    public void enableBigEye(final boolean isChecked) {
+
+
+       /* mGLSurfaceView.queueEvent(new Runnable() {
+            @Override
+            public void run() {
+                //Opengl线程
+                if (isChecked) {
+                    mBigEyeFilter = new BigEyeFilter(mGLSurfaceView.getContext());
+                    mBigEyeFilter.onReady(mWidth, mHeight);
+                } else {
+                    mBigEyeFilter.release();
+                    mBigEyeFilter = null;
+                }
+            }
+        });*/
+    }
+
+    public void enableStick(final boolean isChecked) {
+       /* mGLSurfaceView.queueEvent(new Runnable() {
+            @Override
+            public void run() {
+                //Opengl线程
+                if (isChecked) {
+                    mStickFilter = new StickFilter(mGLSurfaceView.getContext());
+                    mStickFilter.onReady(mWidth, mHeight);
+                } else {
+                    mStickFilter.release();
+                    mStickFilter = null;
+                }
+            }
+        });*/
+    }
+
+    public void enableBeauty(final boolean isChecked) {
+      /*  mGLSurfaceView.queueEvent(new Runnable() {
+            @Override
+            public void run() {
+                //Opengl线程
+                if (isChecked) {
+                    mBeautyFilter = new BeautyFilter(mGLSurfaceView.getContext());
+                    mBeautyFilter.onReady(mWidth, mHeight);
+                } else {
+                    mBeautyFilter.release();
+                    mBeautyFilter = null;
+                }
+            }
+        });*/
     }
 }

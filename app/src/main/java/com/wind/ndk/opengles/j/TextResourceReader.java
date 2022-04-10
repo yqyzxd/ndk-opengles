@@ -10,7 +10,7 @@ import java.io.InputStreamReader;
  * Created By wind
  * on 2020-01-12
  */
-public class TextResoureReader {
+public class TextResourceReader {
 
 
     public static String readFromRaw(Context context,int rawId){

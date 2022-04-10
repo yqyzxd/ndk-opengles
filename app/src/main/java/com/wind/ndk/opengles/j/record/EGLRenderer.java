@@ -39,7 +39,7 @@ public class EGLRenderer {
         mScreenFilter.onReady(width,height);
     }
 
-
+    private long mLastTimestamp;
     /**
      *
      * @param textureID
@@ -52,6 +52,8 @@ public class EGLRenderer {
         //刷新mEGLSurface的时间戳
         //如果设置不合理，编码的时候会采取丢帧或以低质量的编码方式进行编码
         mEGLCore.eglPresentationTimeANDROID(mEGLSurface,timestamp);
+       // mEGLCore.eglPresentationTimeANDROID(mEGLSurface,System.nanoTime()/1000l);
+        //System.out.println("eglPresentationTimeANDROID；"+timestamp);
         //交换缓冲数据（看资料《EGL接口解析与理解 》eglSwapBuffers接口实现说明）
         boolean swapBuffers=mEGLCore.swapBuffers(mEGLSurface);
         if (!swapBuffers){
