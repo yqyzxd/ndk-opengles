@@ -15,8 +15,10 @@ public abstract class BaseRecorder {
     protected boolean mRecording;
 
     protected int mTrackIndex=-1;
-    public BaseRecorder(MediaMuxer mediaMuxer) {
-        this.mMediaMuxer = mediaMuxer;
+    public BaseRecorder() {
+    }
+    public void setMediaMuxer(MediaMuxer mediaMuxer){
+        this.mMediaMuxer=mediaMuxer;
     }
 
     public void start() throws IOException {
@@ -32,30 +34,7 @@ public abstract class BaseRecorder {
     }
 
 
-    public void stop(){
-
-
-        mTrackIndex=-1;
-        mRecording=false;
-        queueEvent(new Runnable() {
-            @Override
-            public void run() {
-
-                if (mMediaCodec!=null){
-                    mMediaCodec.stop();
-                    mMediaCodec.release();
-                    mMediaCodec=null;
-
-                    if (mOnRecordStateChangedListener!=null)
-                        mOnRecordStateChangedListener.onRecordStop();
-                }
-
-                mHandler.getLooper().quitSafely();
-                mHandler=null;
-            }
-        });
-
-    }
+    public void stop(){}
 
     public boolean isAddTrack(){
        return mTrackIndex>=0;

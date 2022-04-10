@@ -15,8 +15,7 @@ public class AudioRecorder extends BaseRecorder {
     private int mSampleRate;
     private int mChannelCount;
 
-    public AudioRecorder(MediaMuxer mediaMuxer, int sampleRate, int channelCount) {
-        super(mediaMuxer);
+    public AudioRecorder(int sampleRate, int channelCount) {
         mSampleRate = sampleRate;
         mChannelCount = channelCount;
     }
@@ -28,7 +27,7 @@ public class AudioRecorder extends BaseRecorder {
     @Override
     public void start() throws IOException {
         super.start();
-
+        mStop=false;
         // aac
         initAudioEncoder(MediaFormat.MIMETYPE_AUDIO_AAC, mSampleRate, mChannelCount);
 
@@ -39,10 +38,29 @@ public class AudioRecorder extends BaseRecorder {
 
 
     }
-
+    private boolean mStop;
     @Override
     public void stop() {
         super.stop();
+        mStop=true;
+        queueEvent(new Runnable() {
+            @Override
+            public void run() {
+
+                if (mMediaCodec!=null){
+                    mMediaCodec.stop();
+                    mMediaCodec.release();
+                    mMediaCodec=null;
+                    mTrackIndex=-1;
+                    mRecording=false;
+                    if (mOnRecordStateChangedListener!=null)
+                        mOnRecordStateChangedListener.onRecordStop();
+                }
+
+                mHandler.getLooper().quitSafely();
+                mHandler=null;
+            }
+        });
     }
 
     private void initAudioEncoder(String mineType, int sampleRate, int channel) {
@@ -70,7 +88,7 @@ public class AudioRecorder extends BaseRecorder {
 
             mMediaCodec.start();
             mStartTime=System.nanoTime()/1000l;
-            while (mRecording/*mAudioRecord.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING*/) {
+            while (mRecording && !mStop/*mAudioRecord.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING*/) {
                 byte[] audioSamples = new byte[mBufferSize];
                 int size = mAudioRecord.read(audioSamples, 0, mBufferSize);
                 if (size > 0) {
@@ -136,10 +154,12 @@ public class AudioRecorder extends BaseRecorder {
     }
     private long prevOutputPTSUs;
     private long getPTSUs() {
-        long result = System.nanoTime() / 1000L;
+       /* long result = System.nanoTime() / 1000L;
         result= result < prevOutputPTSUs ? prevOutputPTSUs : result;
-        return result-mStartTime;
+        return result-mStartTime;*/
 
+        long result = System.nanoTime() / 1000L;
+        return result < prevOutputPTSUs ? prevOutputPTSUs : result;
     }
 
 

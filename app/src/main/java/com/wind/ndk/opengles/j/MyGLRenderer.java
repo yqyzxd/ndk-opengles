@@ -151,7 +151,7 @@ class MyGLRenderer implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameAvai
         //textureId 是要渲染的纹理id 也是要编码的纹理id
 
         //录制视频（将图像进行编码）
-        mMediaRecorder.encodeFrame(textureId, mSurfaceTexture.getTimestamp());
+        mMediaRecorder.encodeFrame(textureId, System.nanoTime()/*mSurfaceTexture.getTimestamp()*/);
     }
 
     /**

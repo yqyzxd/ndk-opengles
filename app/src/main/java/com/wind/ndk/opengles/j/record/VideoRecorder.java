@@ -32,8 +32,8 @@ public class VideoRecorder extends BaseRecorder{
 
     private long mLastTimestampUs;
 
-    public VideoRecorder(MediaMuxer mediaMuxer,Context context, EGLContext shareEGLContext, int width, int height) {
-        super(mediaMuxer);
+    public VideoRecorder(Context context, EGLContext shareEGLContext, int width, int height) {
+
         this.mWidth = width;
         this.mHeight = height;
 

@@ -18,6 +18,8 @@ import java.util.concurrent.LinkedBlockingDeque;
 /**
  * Created By wind
  * on 2020-01-19
+ *
+ * 画面时间戳要与音频时间戳一致，不然会导致生成视频时长异常
  */
 public class MuxerRecorder implements Runnable,BaseRecorder.OnRecordListener {
 
@@ -27,19 +29,18 @@ public class MuxerRecorder implements Runnable,BaseRecorder.OnRecordListener {
     private VideoRecorder mVideoRecorder;
     private AudioRecorder mAudioRecorder;
     private LinkedBlockingDeque<Frame> mFrameQueue;
+
+    private String mOutputPath;
     public MuxerRecorder(Context context, EGLContext shareEGLContext, int width, int height, String outputPath) throws IOException{
 
 
-        /**
-         *  创建封装器（复用器）
-         */
-        mMediaMuxer = new MediaMuxer(outputPath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
+        mOutputPath=outputPath;
 
 
-        mVideoRecorder=new VideoRecorder(mMediaMuxer,context,shareEGLContext,width,height);
+        mVideoRecorder=new VideoRecorder(context,shareEGLContext,width,height);
 
 
-        mAudioRecorder=new AudioRecorder(mMediaMuxer,44100,1);
+        mAudioRecorder=new AudioRecorder(44100,1);
 
         mVideoRecorder.setOnRecordListener(this);
         mAudioRecorder.setOnRecordListener(this);
@@ -52,6 +53,15 @@ public class MuxerRecorder implements Runnable,BaseRecorder.OnRecordListener {
     private boolean mRecording;
     private Thread mMuxerThread;
     public void start(float speed) throws IOException {
+
+        /**
+         *  创建封装器（复用器）
+         */
+        mMediaMuxer = new MediaMuxer(mOutputPath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
+        mVideoRecorder.setMediaMuxer(mMediaMuxer);
+        mAudioRecorder.setMediaMuxer(mMediaMuxer);
+
+
         mRecording=true;
         mFrameQueue.clear();
         mVideoRecorder.setSpeed(speed);
