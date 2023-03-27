@@ -2,7 +2,7 @@
 cmake_minimum_required(VERSION 3.4.1)
 
 
-#add_subdirectory(libpng)
+add_subdirectory(libpng)
 add_library(
         native-lib
 
@@ -41,4 +41,5 @@ target_link_libraries(
         GLESv2
         android
         z
+        pngDecoder
         ${log-lib})
