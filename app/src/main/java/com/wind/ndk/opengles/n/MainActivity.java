@@ -30,18 +30,20 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
 
         renderer=new NativeGLRenderer();
         //png,jpg等还需借助 libpng lpbjpg等库解码才能显示
-        BitmapFactory.Options options=new BitmapFactory.Options();
+        /*BitmapFactory.Options options=new BitmapFactory.Options();
         options.inPreferredConfig=Bitmap.Config.ARGB_8888;
         final Bitmap bitmap= BitmapFactory.decodeResource(getResources(),R.drawable.iwaka,options);
-
-
-       /* new Handler().postDelayed(new Runnable() {
+          new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
-                //无效代码
+                //无效代码 无效的原因是 png,jpg等还需借助 libpng lpbjpg等库解码才能显示
                 renderer.updateTexImage(bitmap);
             }
-        },1000);*/
+        },1000);
+        */
+        //todo 从assets目录中读取png文件，然后使用libpng解码png图片，最后显示到surfaceView
+
+
     }
 
     @Override
