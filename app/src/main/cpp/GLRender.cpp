@@ -22,6 +22,7 @@ GLRender::~GLRender() {
 }
 
 void GLRender::surfaceCreated(ANativeWindow *window) {
+    ALOGE("GLRender surfaceCreated");
     if (mEGLCore==NULL){
         mEGLCore=new EGLCore();
         glGenTextures(1,&mTextureId);
@@ -59,16 +60,17 @@ void GLRender::surfaceCreated(ANativeWindow *window) {
     //创建filter
     mScreenFilter=new ScreenFilter(vertexSource,fragmentSource);
 
-    mTriangle=new Triangle();
-    mTriangle->init();
+    //mTriangle=new Triangle();
+    //mTriangle->init();
 }
 
 void GLRender::surfaceChanged(int width, int height) {
+    ALOGE("GLRender surfaceChanged");
     mWindowSurface->makeCurrent();
     glClearColor(1.0f,1.0f,0.0f,1.0f);
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
     mScreenFilter->onReady(width,height);
-    mTriangle->onDraw(width,height);
+   // mTriangle->onDraw(width,height);
     mWindowSurface->swapBuffers();
 
 }
@@ -76,6 +78,7 @@ void GLRender::surfaceChanged(int width, int height) {
 
 
 void GLRender::surfaceDestroyed() {
+    ALOGE("GLRender surfaceDestroyed");
     if(mTriangle){
         mTriangle->destroy();
         delete mTriangle;
@@ -95,6 +98,9 @@ void GLRender::surfaceDestroyed() {
 
 void GLRender::updateTexImage(void *bytes, int width, int height) {
     ALOGE("GLRender updateTexImage mTextureId:%d",mTextureId);
+    if (mWindowSurface== nullptr){
+        ALOGE("GLRender updateTexImage mWindowSurface is null");
+    }
     mWindowSurface->makeCurrent();
     mScreenFilter->updateTexImage(bytes,  width,  height);
     mScreenFilter->onDrawFrame(mTextureId);

@@ -32,7 +32,7 @@ JNIEXPORT void JNICALL Java_com_wind_ndk_opengles_n_NativeGLRenderer_native_1on_
 }
 
 JNIEXPORT void JNICALL Java_com_wind_ndk_opengles_n_NativeGLRenderer_native_1on_1surface_1changed
-        (JNIEnv *, jobject, jobject jsurface, jint width, jint height) {
+        (JNIEnv *, jobject, jobject , jint width, jint height) {
     if(glLooper){
         glLooper->postMessage(kMsgSurfaceChanged,width,height);
     }
@@ -46,8 +46,11 @@ JNIEXPORT void JNICALL Java_com_wind_ndk_opengles_n_NativeGLRenderer_native_1on_
 }
 
 JNIEXPORT void JNICALL Java_com_wind_ndk_opengles_n_NativeGLRenderer_native_1update_1tex_1image
-        (JNIEnv *env, jobject, jobject jbitmap){
-
+        (JNIEnv *env, jobject, jbyteArray jbitmap,jint width,jint height){
+    if(glLooper){
+        ALOGE("post kMsgUpdateTexImage");
+        glLooper->postMessage(kMsgUpdateTexImage,width,height,jbitmap);
+    }
 
     /*AndroidBitmapInfo bitmapInfo;
     AndroidBitmap_getInfo(env,jbitmap,&bitmapInfo);

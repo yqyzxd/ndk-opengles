@@ -45,7 +45,7 @@ JNIEXPORT void JNICALL Java_com_wind_ndk_opengles_n_NativeGLRenderer_native_1ini
  * Signature: ([BII)V
  */
 JNIEXPORT void JNICALL Java_com_wind_ndk_opengles_n_NativeGLRenderer_native_1update_1tex_1image
-  (JNIEnv *, jobject, jobject jbitmap);
+  (JNIEnv *, jobject, jbyteArray,jint,jint);
 
 #ifdef __cplusplus
 }

@@ -14,8 +14,10 @@ ScreenFilter::ScreenFilter(const char* vertexSource,const char* fragmentSource) 
     mTextureLocation=glGetUniformLocation(mProgram,"u_Texture");
 
 
-
+    checkGlError("ScreenFilter init");
     ALOGE("ScreenFilter mPositionLocation  %d",mPositionLocation);
+    ALOGE("ScreenFilter mCoordLocation  %d",mCoordLocation);
+    ALOGE("ScreenFilter mTextureLocation  %d",mTextureLocation);
 
 }
 ScreenFilter::~ScreenFilter() {
@@ -32,6 +34,7 @@ void ScreenFilter::updateTexImage(void *bytes, int width, int height) {
 }
 
 GLuint ScreenFilter::onDrawFrame(GLuint textureId) {
+    ALOGE("ScreenFilter onDrawFrame mProgram:%d",mProgram);
 //设置一个颜色状态
     glClearColor(0.0f, 0.0f, 1.0f, 0.0f);
     //使能颜色状态的值来清屏
@@ -66,9 +69,9 @@ GLuint ScreenFilter::onDrawFrame(GLuint textureId) {
     };
 
 
-    mPositionLocation=glGetAttribLocation(mProgram,"a_Position");
-    mCoordLocation=glGetAttribLocation(mProgram,"a_Coord");
-    mTextureLocation=glGetUniformLocation(mProgram,"u_Texture");
+    //mPositionLocation=glGetAttribLocation(mProgram,"a_Position");
+    //mCoordLocation=glGetAttribLocation(mProgram,"a_Coord");
+    //mTextureLocation=glGetUniformLocation(mProgram,"u_Texture");
 
     glVertexAttribPointer(mPositionLocation,2,GL_FLOAT, false,0,vertexArray);
     glEnableVertexAttribArray(mPositionLocation);
@@ -83,7 +86,9 @@ GLuint ScreenFilter::onDrawFrame(GLuint textureId) {
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D,textureId);
     checkGlError("glBindTexture");
+    ALOGE("ScreenFilter onDrawFrame before glTexImage2D texWidth:%d,texHeight:%d",texWidth,texHeight);
     glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,texWidth,texHeight,0,GL_RGBA,GL_UNSIGNED_BYTE,mBytes);
+    ALOGE("ScreenFilter onDrawFrame before glDrawArrays");
     glDrawArrays(GL_TRIANGLE_STRIP,0,4);
    /* glDisableVertexAttribArray(mPositionLocation);
     glDisableVertexAttribArray(mCoordLocation);*/

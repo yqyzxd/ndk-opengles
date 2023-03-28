@@ -16,8 +16,8 @@ public class NativeGLRenderer implements SurfaceCallback {
     }
 
 
-    public void updateTexImage(Bitmap bitmap){
-        native_update_tex_image(bitmap);
+    public void updateTexImage(byte[] bitmap,int width,int height){
+        native_update_tex_image(bitmap,width,height);
     }
 
 
@@ -42,6 +42,6 @@ public class NativeGLRenderer implements SurfaceCallback {
     private native void native_on_surface_changed(Surface surface,int width, int height);
     private native void native_on_surface_destroy();
     private native void native_init();
-    private native void  native_update_tex_image(Bitmap bitmap);
+    private native void  native_update_tex_image(byte[] bitmap,int width,int height);
 
 }

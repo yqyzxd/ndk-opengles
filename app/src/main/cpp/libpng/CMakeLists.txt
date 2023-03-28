@@ -1,11 +1,11 @@
 
-cmake_minimum_required(VERSION 3.4.1)
+cmake_minimum_required(VERSION 3.22.1)
 
 
-project("pngDecoder")
+project("png")
 
 add_library(
-        pngDecoder
+        png
 
         STATIC
 
@@ -24,12 +24,14 @@ add_library(
         pngwrite.c
         pngwtran.c
         pngwutil.c
-        png_reader.cpp
-        raw.cpp
+        arm/arm_init.c
+        arm/palette_neon_intrinsics.c
+        arm/filter_neon_intrinsics.c
+        png_decoder.cpp
 )
 
 
 target_link_libraries(
-        pngDecoder
+        png
 
         z)

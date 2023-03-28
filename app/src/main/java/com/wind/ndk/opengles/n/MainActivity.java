@@ -3,6 +3,7 @@ package com.wind.ndk.opengles.n;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
+import android.os.Handler;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
@@ -10,6 +11,9 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.wind.ndk.opengles.R;
+
+import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * Created By wind
@@ -42,6 +46,25 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
         },1000);
         */
         //todo 从assets目录中读取png文件，然后使用libpng解码png图片，最后显示到surfaceView
+
+        new Thread(()->{
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            PngDecoder decoder=new PngDecoder();
+                PngDecoder.Raw raw =decoder.decodeFromAsset(getAssets(),"demo.png");
+                if (raw!=null && raw.bytes!=null && raw.width>0 && raw.height>0){
+
+                    System.out.println("raw:"+raw.width+"-"+raw.height);
+                    System.out.println("raw bytes length:"+  raw.bytes.length);
+                    System.out.println("raw bytes :"+  raw.bytes);
+
+                    renderer.updateTexImage(raw.bytes,raw.width,raw.height);
+                }
+
+        }).start();
 
 
     }
