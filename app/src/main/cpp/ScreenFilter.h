@@ -16,7 +16,7 @@ public:
     virtual ~ScreenFilter();
     virtual GLuint onDrawFrame(GLuint textureId);
 
-    void updateTexImage(void* bytes,int width,int height);
+    void updateTexImage(GLuint textureId,void* bytes,int width,int height);
 
 private:
     GLint  mPositionLocation;

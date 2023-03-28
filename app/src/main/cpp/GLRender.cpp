@@ -70,7 +70,7 @@ void GLRender::surfaceChanged(int width, int height) {
     glClearColor(1.0f,1.0f,0.0f,1.0f);
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
     mScreenFilter->onReady(width,height);
-   // mTriangle->onDraw(width,height);
+    //mTriangle->onDraw(width,height);
     mWindowSurface->swapBuffers();
 
 }
@@ -100,9 +100,11 @@ void GLRender::updateTexImage(void *bytes, int width, int height) {
     ALOGE("GLRender updateTexImage mTextureId:%d",mTextureId);
     if (mWindowSurface== nullptr){
         ALOGE("GLRender updateTexImage mWindowSurface is null");
+        return;
     }
     mWindowSurface->makeCurrent();
-    mScreenFilter->updateTexImage(bytes,  width,  height);
+    mScreenFilter->updateTexImage(mTextureId,bytes,  width,  height);
+
     mScreenFilter->onDrawFrame(mTextureId);
     bool swap=mWindowSurface->swapBuffers();
    ALOGE("GLRender swapBuffers:%d",swap);

@@ -23,9 +23,10 @@ add_library(
         GLLooper.cpp
         Triangle.cpp
         com_wind_ndk_opengles_n_NativeGLRenderer.cpp
-        com_wind_ndk_opengl_es_n_PngDecoder.cpp
+        com_wind_ndk_opengles_n_PngDecoder.cpp
         pngdecoder/asset_png_decoder.cpp
         pngdecoder/file_png_decoder.cpp
+        global.cpp
 )
 
 

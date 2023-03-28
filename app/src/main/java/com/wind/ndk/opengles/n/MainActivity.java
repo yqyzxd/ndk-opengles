@@ -54,7 +54,7 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
                 throw new RuntimeException(e);
             }
             PngDecoder decoder=new PngDecoder();
-                PngDecoder.Raw raw =decoder.decodeFromAsset(getAssets(),"demo.png");
+                PngDecoder.Raw raw =decoder.decodeFromAsset(getAssets(),"1.png");
                 if (raw!=null && raw.bytes!=null && raw.width>0 && raw.height>0){
 
                     System.out.println("raw:"+raw.width+"-"+raw.height);

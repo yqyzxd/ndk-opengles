@@ -24,11 +24,18 @@ ScreenFilter::~ScreenFilter() {
 
 }
 
-void ScreenFilter::updateTexImage(void *bytes, int width, int height) {
-    this->mBytes=bytes;
-    this->texWidth=width;
-    this->texHeight=height;
-
+void ScreenFilter::updateTexImage(GLuint textureId,void *pixels, int width, int height) {
+    if (pixels) {
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, textureId);
+        if (checkGlError("glBindTexture")) {
+            return;
+        }
+        ALOGE("ScreenFilter before glTexImage2D");
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+        ALOGE("ScreenFilter after glTexImage2D");
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
     ALOGE("ScreenFilter updateTexImage width %d height %d",width,height);
 
 }
@@ -36,30 +43,20 @@ void ScreenFilter::updateTexImage(void *bytes, int width, int height) {
 GLuint ScreenFilter::onDrawFrame(GLuint textureId) {
     ALOGE("ScreenFilter onDrawFrame mProgram:%d",mProgram);
 //设置一个颜色状态
-    glClearColor(0.0f, 0.0f, 1.0f, 0.0f);
+    glClearColor(0.0f, 0.0f, 1.0f, 1.0f);
     //使能颜色状态的值来清屏
     glClear(GL_COLOR_BUFFER_BIT);
     glViewport(0,0,mWidth,mHeight);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    //glEnable(GL_BLEND);
+   // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     glUseProgram(mProgram);
 
     ALOGE("ScreenFilter onDrawFrame textureId:%d",textureId);
     //顶点坐标
-    static GLfloat vertexArray[]={
-            -1.0f,1.0f,
-            1.0f,1.0f,
-            -1.0f,-1.0f,
-            1.0f,-1.0f
-    };
+    static GLfloat vertexArray[]={ -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f, -1.0f };
 //纹理坐标
-    static GLfloat textureCoordArray[]={
-            0.0f,1.0f,
-            1.0f,1.0f,
-            0.0f,0.0f,
-            1.0f,0.0f
-    };
+    static GLfloat textureCoordArray[]={ 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f };;
 //屏幕坐标
     static GLfloat screenCoordArray[]={
             0.0f,0.0f,
@@ -77,23 +74,22 @@ GLuint ScreenFilter::onDrawFrame(GLuint textureId) {
     glEnableVertexAttribArray(mPositionLocation);
 
 
-    glVertexAttribPointer(mCoordLocation,2,GL_FLOAT, false,0,screenCoordArray);
+    glVertexAttribPointer(mCoordLocation,2,GL_FLOAT, false,0,textureCoordArray);
     glEnableVertexAttribArray(mCoordLocation);
 
-    glUniform1i(mTextureLocation,0);
+                                                                                                                                                                                                                                                                //tell the texture uniform sampler to use this texture in the shader by telling it to read from texture unit 0.
+
     ALOGE("ScreenFilter onDrawFrame mTextureLocation %d",mTextureLocation);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D,textureId);
+    glUniform1i(mTextureLocation,0);
     checkGlError("glBindTexture");
-    ALOGE("ScreenFilter onDrawFrame before glTexImage2D texWidth:%d,texHeight:%d",texWidth,texHeight);
-    glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,texWidth,texHeight,0,GL_RGBA,GL_UNSIGNED_BYTE,mBytes);
-    ALOGE("ScreenFilter onDrawFrame before glDrawArrays");
+   // glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,texWidth,texHeight,0,GL_RGBA,GL_UNSIGNED_BYTE,mBytes);
     glDrawArrays(GL_TRIANGLE_STRIP,0,4);
    /* glDisableVertexAttribArray(mPositionLocation);
     glDisableVertexAttribArray(mCoordLocation);*/
-    glBindTexture(GL_TEXTURE_2D,0);
-
+    //glBindTexture(GL_TEXTURE_2D,0);
 
     return textureId;
 }

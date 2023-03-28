@@ -35,7 +35,7 @@ extern "C" {
 // 创建size个FBO和Texture
     void createFrameBuffers(GLuint* frambuffers, GLuint* textures, int width, int height, int size);
     //检查是否出错
-    void checkGlError(const char* op);
+    bool checkGlError(const char* op);
     //缩放
 
     //平移

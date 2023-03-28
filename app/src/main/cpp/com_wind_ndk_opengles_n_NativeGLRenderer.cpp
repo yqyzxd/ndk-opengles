@@ -4,6 +4,8 @@
 #include <android/native_window.h>
 #include <android/native_window_jni.h>
 #include "android/bitmap.h"
+#include "global.h"
+extern unsigned char* Pixles;
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -49,7 +51,8 @@ JNIEXPORT void JNICALL Java_com_wind_ndk_opengles_n_NativeGLRenderer_native_1upd
         (JNIEnv *env, jobject, jbyteArray jbitmap,jint width,jint height){
     if(glLooper){
         ALOGE("post kMsgUpdateTexImage");
-        glLooper->postMessage(kMsgUpdateTexImage,width,height,jbitmap);
+
+        glLooper->postMessage(kMsgUpdateTexImage,width,height, Pixles);
     }
 
     /*AndroidBitmapInfo bitmapInfo;

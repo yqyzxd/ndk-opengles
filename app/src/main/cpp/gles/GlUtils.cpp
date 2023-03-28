@@ -176,10 +176,12 @@ void createFrameBuffers(GLuint* frambuffers, GLuint* textures, int width, int he
     }
 }
 //检查是否出错
-void checkGlError(const char* op){
+bool checkGlError(const char* op){
    for(GLint error=glGetError();error;error=glGetError()){
        ALOGE( "[GLES2] after %s() glError (0x%x)\n", op, error);
+       return true;
    }
+    return false;
 }
 
 #ifdef __cplusplus

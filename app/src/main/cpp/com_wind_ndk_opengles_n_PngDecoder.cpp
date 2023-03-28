@@ -5,10 +5,11 @@
 #include "pngdecoder/file_png_decoder.h"
 #include "pngdecoder/asset_png_decoder.h"
 #include "common/jniutil.h"
+#include "global.h"
 //
 // Created by wind on 2023/3/28.
 //
-
+extern unsigned char* Pixles;
 extern "C"
 JNIEXPORT jobject JNICALL
 Java_com_wind_ndk_opengles_n_PngDecoder_native_1decode_1from_1file(JNIEnv *env, jobject thiz,
@@ -41,12 +42,12 @@ Java_com_wind_ndk_opengles_n_PngDecoder_native_1decode_1from_1asset(JNIEnv *env,
     PngDecoder* decoder=new AssetPngDecoder(mgr,cFileName);
     env->ReleaseStringUTFChars(jfilename,cFileName);
 
-    png_bytep bytes=decoder->decode();
+    Pixles=decoder->decode();
     int w=decoder->getWidth();
     int h=decoder->getHeight();
-    if (bytes!=NULL){
-        size_t len = strlen(reinterpret_cast<const char *>(bytes));
-        jbyteArray byteArray=charToJByteArray(env,bytes,len);
+    if (Pixles!=NULL){
+        int len=w*h;
+        jbyteArray byteArray=charToJByteArray(env,Pixles,len);
 
         //反射创建java层raw对象
 

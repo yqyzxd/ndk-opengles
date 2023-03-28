@@ -7,7 +7,7 @@
 
 
 AssetPngDecoder::AssetPngDecoder(AAssetManager* mgr ,char *fName): PngDecoder(fName) {
-    asset = AAssetManager_open(mgr, fileName, AASSET_MODE_STREAMING);
+    asset = AAssetManager_open(mgr, fName, AASSET_MODE_STREAMING);
     if (asset==NULL){
         ALOGE("AssetPngDecoder open assert error");
     }else{
