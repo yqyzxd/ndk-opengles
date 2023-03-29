@@ -1,5 +1,6 @@
 package com.wind.ndk.opengles.n;
 
+import android.Manifest;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
@@ -45,6 +46,7 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
             }
         },1000);
         */
+        requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE,Manifest.permission.READ_EXTERNAL_STORAGE},1);
         //todo 从assets目录中读取png文件，然后使用libpng解码png图片，最后显示到surfaceView
 
         new Thread(()->{

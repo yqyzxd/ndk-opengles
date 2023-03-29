@@ -23,9 +23,6 @@ private:
     GLint  mCoordLocation;
     GLint  mTextureLocation;
 
-    void* mBytes;
-    int texWidth;
-    int texHeight;
 };
 
 

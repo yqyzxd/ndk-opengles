@@ -60,12 +60,12 @@ bool EGLCore::init(EGLContext shareContext) {
         shareContext=EGL_NO_CONTEXT;
     }
     //4.创建EGLContext
-    EGLint eglContextAttribs[]={EGL_CONTEXT_CLIENT_VERSION,2,
+    EGLint eglContextAttributes[]={EGL_CONTEXT_CLIENT_VERSION,2,
                                 EGL_NONE};
     /*
      * EGLDisplay dpy, EGLConfig config, EGLContext share_context, const EGLint *attrib_list
      */
-    mEGLContext=eglCreateContext(mEGLDisplay,mEGLConfig,shareContext,eglContextAttribs);
+    mEGLContext=eglCreateContext(mEGLDisplay,mEGLConfig,shareContext,eglContextAttributes);
 
 
     //获取eglPresentationTimeAndroid方法的地址
@@ -78,7 +78,7 @@ EGLContext EGLCore::getEGLContext() {
 }
 
 EGLSurface EGLCore::createWindowSurface(ANativeWindow *window) {
-    if(window==NULL){
+   /* if(window==NULL){
         return NULL;
     }
     int attribs[]={EGL_NONE};
@@ -87,7 +87,19 @@ EGLSurface EGLCore::createWindowSurface(ANativeWindow *window) {
     if(eglSurface==NULL){
         return NULL;
     }
-    return eglSurface;
+    return eglSurface;*/
+    EGLSurface surface = NULL;
+    EGLint format;
+    if (!eglGetConfigAttrib(mEGLDisplay, mEGLConfig, EGL_NATIVE_VISUAL_ID, &format)) {
+        ALOGE("eglGetConfigAttrib() returned error %d", eglGetError());
+        release();
+        return surface;
+    }
+    ANativeWindow_setBuffersGeometry(window, 0, 0, format);
+    if (!(surface = eglCreateWindowSurface( mEGLDisplay, mEGLConfig, window, 0))) {
+        ALOGE("eglCreateWindowSurface() returned error %d", eglGetError());
+    }
+    return surface;
 }
 
 EGLSurface EGLCore::createOffscreenSurface(int width, int height) {

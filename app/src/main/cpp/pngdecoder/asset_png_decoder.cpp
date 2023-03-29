@@ -17,11 +17,7 @@ AssetPngDecoder::AssetPngDecoder(AAssetManager* mgr ,char *fName): PngDecoder(fN
 }
 
 void AssetPngDecoder::pngReadCallback(png_bytep data, png_size_t length) {
-    //ALOGE("AssetPngDecoder before pngReadCallback");
-    int readLen=AAsset_read(asset,data,length);
-    ALOGE("AssetPngDecoder length:%d",length);
-    ALOGE("AssetPngDecoder readLen:%d",readLen);
-    //ALOGE("AssetPngDecoder after pngReadCallback");
+   AAsset_read(asset,data,length);
 }
 
 png_bytep AssetPngDecoder::readHead() {

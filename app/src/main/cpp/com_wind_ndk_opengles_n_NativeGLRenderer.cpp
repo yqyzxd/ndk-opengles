@@ -5,12 +5,11 @@
 #include <android/native_window_jni.h>
 #include "android/bitmap.h"
 #include "global.h"
-extern unsigned char* Pixles;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-GLLooper* glLooper=0;
 ANativeWindow* window=0;
 JNIEXPORT void JNICALL Java_com_wind_ndk_opengles_n_NativeGLRenderer_native_1init
         (JNIEnv *, jobject){
@@ -50,9 +49,9 @@ JNIEXPORT void JNICALL Java_com_wind_ndk_opengles_n_NativeGLRenderer_native_1on_
 JNIEXPORT void JNICALL Java_com_wind_ndk_opengles_n_NativeGLRenderer_native_1update_1tex_1image
         (JNIEnv *env, jobject, jbyteArray jbitmap,jint width,jint height){
     if(glLooper){
-        ALOGE("post kMsgUpdateTexImage");
+       // ALOGE("post kMsgUpdateTexImage %d",Pixles);
 
-        glLooper->postMessage(kMsgUpdateTexImage,width,height, Pixles);
+        //glLooper->postMessage(kMsgUpdateTexImage,width,height, Pixles);
     }
 
     /*AndroidBitmapInfo bitmapInfo;

@@ -6,10 +6,12 @@
 #include "pngdecoder/asset_png_decoder.h"
 #include "common/jniutil.h"
 #include "global.h"
+#include "GLLooper.h"
+
 //
 // Created by wind on 2023/3/28.
 //
-extern unsigned char* Pixles;
+
 extern "C"
 JNIEXPORT jobject JNICALL
 Java_com_wind_ndk_opengles_n_PngDecoder_native_1decode_1from_1file(JNIEnv *env, jobject thiz,
@@ -42,10 +44,12 @@ Java_com_wind_ndk_opengles_n_PngDecoder_native_1decode_1from_1asset(JNIEnv *env,
     PngDecoder* decoder=new AssetPngDecoder(mgr,cFileName);
     env->ReleaseStringUTFChars(jfilename,cFileName);
 
-    Pixles=decoder->decode();
+    png_bytep  bytes=decoder->decode();
     int w=decoder->getWidth();
     int h=decoder->getHeight();
-    if (Pixles!=NULL){
+    glLooper->postMessage(kMsgUpdateTexImage,w,h, bytes);
+    ALOGE("native_1decode_1from_1asset %d",bytes);
+   /* if (Pixles!=NULL){
         int len=w*h;
         jbyteArray byteArray=charToJByteArray(env,Pixles,len);
 
@@ -56,7 +60,7 @@ Java_com_wind_ndk_opengles_n_PngDecoder_native_1decode_1from_1asset(JNIEnv *env,
                                                 "([BII)Lcom/wind/ndk/opengles/n/PngDecoder$Raw;");
         jobject rawObj=env->CallStaticObjectMethod(rawClass,metId,byteArray,w,h);
         return rawObj;
-    }
+    }*/
 
     return nullptr;
 

@@ -4,5 +4,6 @@
 
 #ifndef NDK_OPENGLES_GLOBAL_H
 #define NDK_OPENGLES_GLOBAL_H
-extern unsigned char* Pixles;
+
+extern GLLooper* glLooper;
 #endif //NDK_OPENGLES_GLOBAL_H

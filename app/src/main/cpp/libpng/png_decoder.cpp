@@ -59,7 +59,7 @@ png_bytep PngDecoder::decode() {
     png_set_read_fn(png_ptr, this, png_read_callback);
     ALOGE("PngDecoder after png_set_read_fn");
     //let libpng know you already read the first 8 bytes
-   // png_set_sig_bytes(png_ptr, 8);
+    //png_set_sig_bytes(png_ptr, 8);
 
     // read all the info up to the image data
     png_read_info(png_ptr, info_ptr);
